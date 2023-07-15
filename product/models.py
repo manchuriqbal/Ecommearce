@@ -34,6 +34,12 @@ class Product(BaseModel):
     color_varient = models.ManyToManyField(ColorVarient, null=True, blank=True)
     size_varient = models.ManyToManyField(SizeVarient, null=True, blank=True)
 
+    def __str__(self) -> str:
+        return self.product_name
+
+    def get_product_price_by_size(self, size):
+        return self.price + SizeVarient.objects.get(size_name=size).price  
+
 
 
 
