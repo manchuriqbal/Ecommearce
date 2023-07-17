@@ -21,45 +21,6 @@
     </thead>
 
 
-    {% comment %} <tbody>
-
-        {% for cart_item in cart %}
-    <tr>
-        <td>
-            <figure class="itemside">
-              <div class="aside"><img src="{{ cart_items.product.image.url }}" class="img-sm"></div>
-              <figcaption class="info">
-                <a href="#" class="title text-dark">{{ cart_items.cart.name }}</a>
-                <p class="text-muted small">Size: {{ cart_items.size_varient.size_name }}, Color: {{ cart_items.product.color }}, <br> Brand: {{ cart_items.product.brand }}</p>
-              </figcaption>
-            </figure>
-          </td>
-          <td> 
-            <select class="form-control">
-              <option>1</option>
-              <option>2</option>	
-              <option>3</option>	
-              <option>4</option>	
-            </select> 
-          </td>
-          <td> 
-            <div class="price-wrap"> 
-              <var class="price">${{ cart_items.product.price }}</var> 
-            </div> <!-- price-wrap .// -->
-          </td>
-          <td class="text-right"> 
-            <a data-original-title="Save to Wishlist" title="" href="" class="btn btn-light" data-toggle="tooltip"> <i class="fa fa-heart"></i></a> 
-            <a href="" class="btn btn-light"> Remove</a>
-          </td>
-          
-    </tr>
-
-
-    {% endfor %}
-
-    
-    </tbody> {% endcomment %}
-
 
     <tbody>
         {% for cart_item in cart %}
@@ -117,16 +78,21 @@
         <aside class="col-md-3">
             <div class="card mb-3">
                 <div class="card-body">
-                <form>
+                <form method="POST">
+                  {% csrf_token %}
+                  {% include "base/alert.html" %}
                     <div class="form-group">
                         <label>Have coupon?</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" name="" placeholder="Coupon code">
+                            <input type="text" class="form-control" name="coupon" placeholder="Coupon code">
                             <span class="input-group-append"> 
-                                <button class="btn btn-primary">Apply</button>
+                                <button type="submit" class="btn btn-primary">Apply</button>
                             </span>
                         </div>
                     </div>
+                    {% if cart_id.coupon %}
+                   <a href="{% url 'remove_coupon' cart_id.uid %}" class="btn btn-success"> {{cart_id.coupon.coupon_code}}</a>
+                   {% endif %}
                 </form>
                 </div> <!-- card-body.// -->
             </div>  <!-- card .// -->
@@ -135,7 +101,7 @@
                         
                         <dl class="dlist-align">
                           <dt>Total:</dt>
-                          <dd class="text-right h5"><strong>${{ cart.get_cart_total }}</strong></dd>
+                          <dd class="text-right h5"><strong>${{ cart_id.get_cart_total }}</strong></dd>
                         </dl>
                         <hr>
                         <p class="text-center mb-3">

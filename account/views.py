@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect,  HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from .models import Profile
-from product.models import SizeVarient, Product
+from product.models import SizeVarient, Product, Coupon
 from .models import Cart, CartItams
 
 
@@ -90,8 +90,61 @@ def add_to_cart(request, uid):
 
 def cart(request):
     cart_items = CartItams.objects.filter(cart__is_paid=False, cart__user=request.user)
-    context = {"cart": cart_items}
+    cart_item = Cart.objects.get(is_paid=False, user=request.user)
+    if request.method == "POST":
+        coupon = request.POST.get("coupon")
+        coupon_obj = Coupon.objects.filter(coupon_code__icontains = coupon)
+        if not coupon_obj.exists():
+            messages.warning(request, "Invalid Coupon.")
+            return HttpResponseRedirect(request.path_info)
+        
+        if cart_item.coupon:
+            messages.warning(request, "Coupon Alrady Exists.")
+            return HttpResponseRedirect(request.path_info)
+        
+        if cart_item.get_cart_total() < coupon_obj[0].minimum_price:
+            messages.warning(request, f"Your Amound Should be Greater Then {coupon_obj[0].minimum_price}.")
+            return HttpResponseRedirect(request.path_info)
+        
+        if not coupon_obj[0].is_valide:
+            messages.warning(request, "Your Coupon is not Valid")
+            return HttpResponseRedirect(request.path_info)
+
+
+        cart_item.coupon = coupon_obj[0]
+        cart_item.save()
+        messages.success(request, "Coupon appied.")
+        return HttpResponseRedirect(request.path_info)
+        
+    context = {
+        "cart": cart_items,
+        "cart_id": cart_item,
+
+        }
     return render(request, "accounts/cart.html", context)
+
+
+
+# def cart(request):
+#     cart_items = CartItams.objects.filter(cart__is_paid=False, cart__user=request.user)
+#     if request.method == "POST":
+#         coupon = request.POST.get("coupon")
+#         coupon_obj = Coupon.objects.filter(coupon_code__icontains = coupon)
+#         if not coupon_obj.exists():
+#             messages.warning(request, "Invalid Coupon.")
+#             return HttpResponseRedirect(request.path_info)
+        
+#         if cart_items.coupon:
+#             messages.warning(request, "Coupon Alrady Exists.")
+#             return HttpResponseRedirect(request.path_info)
+        
+#         cart_items.coupon = coupon_obj[0]
+#         cart_items.save()
+#         messages.success(request, "Coupon appied.")
+#         return HttpResponseRedirect(request.path_info)
+        
+#     context = {"cart": cart_items}
+#     return render(request, "accounts/cart.html", context)
 
 
 
@@ -102,6 +155,22 @@ def delete_cart(request, uid):
     except Exception as e:
         print(e)
         
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+
+
+def remove_coupon(request, uid):
+    try:
+
+        cart = Cart.objects.get(uid = uid)
+        cart.coupon = None
+        cart.save()
+
+    except Exception as e:
+        print(e)
+
+    messages.success(request, "Coupon Remove.")
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
